@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+"""
+sync_lang.py - copy shared/lang.py next to every script that imports it.
+
+Each skill folder has to install on its own, so each one carries its own copy
+of lang.py. This keeps the copies identical. Run it after any edit to
+shared/lang.py; tests/test_pack.py (LangSync) fails if you forget.
+
+Usage
+  python3 tools/sync_lang.py          # copy
+  python3 tools/sync_lang.py --check  # exit 1 if any copy differs
+"""
+
+import argparse
+import filecmp
+import os
+import shutil
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SOURCE = os.path.join(ROOT, "shared", "lang.py")
+TARGETS = ["ig-human", "ig-caption", "ig-reel", "ig-viral"]
+
+
+def targets():
+    return [os.path.join(ROOT, "skills", t, "lang.py") for t in TARGETS]
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    ap.add_argument("--check", action="store_true")
+    args = ap.parse_args()
+    stale = [t for t in targets() if not os.path.exists(t) or not filecmp.cmp(SOURCE, t, shallow=False)]
+    if args.check:
+        for t in stale:
+            print(f"out of date: {os.path.relpath(t, ROOT)}")
+        sys.exit(1 if stale else 0)
+    for t in stale:
+        shutil.copyfile(SOURCE, t)
+        print(f"copied -> {os.path.relpath(t, ROOT)}")
+    if not stale:
+        print("all copies up to date")
+
+
+if __name__ == "__main__":
+    main()

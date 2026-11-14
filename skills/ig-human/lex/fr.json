@@ -1,0 +1,682 @@
+{
+  "lang": "fr",
+  "version": "0.2",
+  "note": "Lexique français. Le français s'accorde (genre, nombre, élision) et un rechercher-remplacer ne sait pas le faire : seules les suppressions sans risque sont appliquées (adverbes, formules d'essai entières). Tout le reste est en \"mode\": \"report\" : signalé avec une piste, et réécrit par Claude, phrase entière. Ajoute ou retire librement : c'est ton fichier.",
+  "words": [
+    {
+      "find": "véritablement",
+      "replace": "vraiment",
+      "family": "adverbes"
+    },
+    {
+      "find": "indéniablement",
+      "replace": "",
+      "family": "adverbes"
+    },
+    {
+      "find": "incontestablement",
+      "replace": "",
+      "family": "adverbes"
+    },
+    {
+      "find": "fondamentalement",
+      "replace": "",
+      "family": "adverbes"
+    },
+    {
+      "find": "résolument",
+      "replace": "",
+      "family": "adverbes"
+    },
+    {
+      "find": "révolutionnaire",
+      "mode": "report",
+      "hint": "dis ce qui change, concrètement",
+      "family": "adjectifs"
+    },
+    {
+      "find": "révolutionnaires",
+      "mode": "report",
+      "hint": "dis ce qui change, concrètement",
+      "family": "adjectifs"
+    },
+    {
+      "find": "holistique",
+      "mode": "report",
+      "hint": "« global », ou dis ce que ça couvre",
+      "family": "adjectifs"
+    },
+    {
+      "find": "optimal",
+      "mode": "report",
+      "hint": "« bon », ou le chiffre",
+      "family": "adjectifs"
+    },
+    {
+      "find": "optimale",
+      "mode": "report",
+      "hint": "« bonne », ou le chiffre",
+      "family": "adjectifs"
+    },
+    {
+      "find": "crucial",
+      "mode": "report",
+      "hint": "« important », ou pourquoi",
+      "family": "adjectifs"
+    },
+    {
+      "find": "cruciale",
+      "mode": "report",
+      "hint": "« importante », ou pourquoi",
+      "family": "adjectifs"
+    },
+    {
+      "find": "cruciaux",
+      "mode": "report",
+      "hint": "« importants », ou pourquoi",
+      "family": "adjectifs"
+    },
+    {
+      "find": "cruciales",
+      "mode": "report",
+      "hint": "« importantes », ou pourquoi",
+      "family": "adjectifs"
+    },
+    {
+      "find": "primordial",
+      "mode": "report",
+      "hint": "« important », ou pourquoi",
+      "family": "adjectifs"
+    },
+    {
+      "find": "primordiale",
+      "mode": "report",
+      "hint": "« importante », ou pourquoi",
+      "family": "adjectifs"
+    },
+    {
+      "find": "primordiaux",
+      "mode": "report",
+      "hint": "« importants », ou pourquoi",
+      "family": "adjectifs"
+    },
+    {
+      "find": "primordiales",
+      "mode": "report",
+      "hint": "« importantes », ou pourquoi",
+      "family": "adjectifs"
+    },
+    {
+      "find": "fascinant",
+      "mode": "report",
+      "hint": "montre le fait qui fascine",
+      "family": "adjectifs"
+    },
+    {
+      "find": "captivant",
+      "mode": "report",
+      "hint": "montre ce qui accroche",
+      "family": "adjectifs"
+    },
+    {
+      "find": "inestimable",
+      "mode": "report",
+      "hint": "donne la valeur, ou coupe",
+      "family": "adjectifs"
+    },
+    {
+      "find": "innovant",
+      "mode": "report",
+      "hint": "dis ce qui est nouveau",
+      "family": "adjectifs"
+    },
+    {
+      "find": "innovante",
+      "mode": "report",
+      "hint": "dis ce qui est nouveau",
+      "family": "adjectifs"
+    },
+    {
+      "find": "synergie",
+      "mode": "report",
+      "hint": "dis qui fait quoi avec qui",
+      "family": "noms"
+    },
+    {
+      "find": "game-changer",
+      "mode": "report",
+      "hint": "dis ce qui change",
+      "family": "anglicismes"
+    },
+    {
+      "find": "s'avère",
+      "mode": "report",
+      "hint": "« est »",
+      "family": "formules"
+    },
+    {
+      "find": "s’avère",
+      "mode": "report",
+      "hint": "« est »",
+      "family": "formules"
+    },
+    {
+      "find": "explorons",
+      "mode": "report",
+      "hint": "coupe, montre",
+      "family": "formules"
+    }
+  ],
+  "phrases": [
+    {
+      "find": "il est important de noter que",
+      "replace": "",
+      "family": "formules"
+    },
+    {
+      "find": "il convient de noter que",
+      "replace": "",
+      "family": "formules"
+    },
+    {
+      "find": "il convient de souligner que",
+      "replace": "",
+      "family": "formules"
+    },
+    {
+      "find": "force est de constater que",
+      "replace": "",
+      "family": "formules"
+    },
+    {
+      "find": "il va sans dire que",
+      "replace": "",
+      "family": "formules"
+    },
+    {
+      "find": "un véritable",
+      "replace": "un",
+      "family": "formules"
+    },
+    {
+      "find": "une véritable",
+      "replace": "une",
+      "family": "formules"
+    },
+    {
+      "find": "de surcroît",
+      "replace": "en plus",
+      "family": "formules"
+    },
+    {
+      "find": "de manière optimale",
+      "mode": "report",
+      "hint": "« bien », ou comment exactement",
+      "family": "adjectifs"
+    },
+    {
+      "find": "un atout majeur",
+      "mode": "report",
+      "hint": "dis ce que ça rapporte",
+      "family": "noms"
+    },
+    {
+      "find": "mine d'or",
+      "mode": "report",
+      "hint": "dis ce qu'on y trouve",
+      "family": "noms"
+    },
+    {
+      "find": "mine d’or",
+      "mode": "report",
+      "hint": "dis ce qu'on y trouve",
+      "family": "noms"
+    },
+    {
+      "find": "game changer",
+      "mode": "report",
+      "hint": "dis ce qui change",
+      "family": "anglicismes"
+    },
+    {
+      "find": "changer la donne",
+      "mode": "report",
+      "hint": "dis ce qui change",
+      "family": "formules"
+    },
+    {
+      "find": "dans un monde où",
+      "mode": "report",
+      "hint": "commence par le fait",
+      "family": "formules"
+    },
+    {
+      "find": "dans le monde d'aujourd'hui",
+      "mode": "report",
+      "hint": "coupe, commence par le fait",
+      "family": "formules"
+    },
+    {
+      "find": "dans le monde d’aujourd’hui",
+      "mode": "report",
+      "hint": "coupe, commence par le fait",
+      "family": "formules"
+    },
+    {
+      "find": "dans le monde actuel",
+      "mode": "report",
+      "hint": "coupe",
+      "family": "formules"
+    },
+    {
+      "find": "dans le paysage actuel",
+      "mode": "report",
+      "hint": "coupe",
+      "family": "formules"
+    },
+    {
+      "find": "à l'ère du numérique",
+      "mode": "report",
+      "hint": "coupe",
+      "family": "formules"
+    },
+    {
+      "find": "à l’ère du numérique",
+      "mode": "report",
+      "hint": "coupe",
+      "family": "formules"
+    },
+    {
+      "find": "de nos jours",
+      "mode": "report",
+      "hint": "coupe, ou une date",
+      "family": "formules"
+    },
+    {
+      "find": "à l'heure où",
+      "mode": "report",
+      "hint": "coupe, commence par le fait",
+      "family": "formules"
+    },
+    {
+      "find": "à l’heure où",
+      "mode": "report",
+      "hint": "coupe, commence par le fait",
+      "family": "formules"
+    },
+    {
+      "find": "en constante évolution",
+      "mode": "report",
+      "hint": "dis ce qui a changé et quand",
+      "family": "formules"
+    },
+    {
+      "find": "il est essentiel de",
+      "mode": "report",
+      "hint": "« il faut », ou l'impératif",
+      "family": "formules"
+    },
+    {
+      "find": "il est crucial de",
+      "mode": "report",
+      "hint": "« il faut », ou l'impératif",
+      "family": "formules"
+    },
+    {
+      "find": "n'oubliez pas que",
+      "mode": "report",
+      "hint": "dis-le directement",
+      "family": "formules"
+    },
+    {
+      "find": "n’oubliez pas que",
+      "mode": "report",
+      "hint": "dis-le directement",
+      "family": "formules"
+    },
+    {
+      "find": "gardez à l'esprit",
+      "mode": "report",
+      "hint": "dis-le directement",
+      "family": "formules"
+    },
+    {
+      "find": "gardez à l’esprit",
+      "mode": "report",
+      "hint": "dis-le directement",
+      "family": "formules"
+    },
+    {
+      "find": "vous l'aurez compris",
+      "mode": "report",
+      "hint": "coupe",
+      "family": "formules"
+    },
+    {
+      "find": "vous l’aurez compris",
+      "mode": "report",
+      "hint": "coupe",
+      "family": "formules"
+    },
+    {
+      "find": "en d'autres termes",
+      "mode": "report",
+      "hint": "coupe, redis-le mieux une fois",
+      "family": "formules"
+    },
+    {
+      "find": "en d’autres termes",
+      "mode": "report",
+      "hint": "coupe, redis-le mieux une fois",
+      "family": "formules"
+    },
+    {
+      "find": "sans plus attendre",
+      "mode": "report",
+      "hint": "coupe",
+      "family": "formules"
+    },
+    {
+      "find": "entrons dans le vif du sujet",
+      "mode": "report",
+      "hint": "coupe, entre dedans",
+      "family": "formules"
+    },
+    {
+      "find": "dans cet article",
+      "mode": "report",
+      "hint": "coupe",
+      "family": "formules"
+    },
+    {
+      "find": "dans ce guide",
+      "mode": "report",
+      "hint": "coupe",
+      "family": "formules"
+    },
+    {
+      "find": "n'hésitez pas à",
+      "mode": "report",
+      "hint": "l'impératif seul : « écrivez-moi »",
+      "family": "formules"
+    },
+    {
+      "find": "n’hésitez pas à",
+      "mode": "report",
+      "hint": "l'impératif seul : « écrivez-moi »",
+      "family": "formules"
+    },
+    {
+      "find": "n'hésite pas à",
+      "mode": "report",
+      "hint": "l'impératif seul : « écris-moi »",
+      "family": "formules"
+    },
+    {
+      "find": "n’hésite pas à",
+      "mode": "report",
+      "hint": "l'impératif seul : « écris-moi »",
+      "family": "formules"
+    },
+    {
+      "find": "jouer un rôle clé",
+      "mode": "report",
+      "hint": "dis ce que ça fait",
+      "family": "formules"
+    },
+    {
+      "find": "joue un rôle clé",
+      "mode": "report",
+      "hint": "dis ce que ça fait",
+      "family": "formules"
+    },
+    {
+      "find": "joue un rôle crucial",
+      "mode": "report",
+      "hint": "dis ce que ça fait",
+      "family": "formules"
+    },
+    {
+      "find": "la clé réside dans",
+      "mode": "report",
+      "hint": "dis la chose",
+      "family": "formules"
+    },
+    {
+      "find": "réside dans",
+      "mode": "report",
+      "hint": "« c'est », plus simple",
+      "family": "formules"
+    },
+    {
+      "find": "est la clé du succès",
+      "mode": "report",
+      "hint": "dis ce que ça rapporte",
+      "family": "formules"
+    },
+    {
+      "find": "plongeons dans",
+      "mode": "report",
+      "hint": "entre dans le sujet",
+      "family": "formules"
+    },
+    {
+      "find": "plongeons ensemble dans",
+      "mode": "report",
+      "hint": "entre dans le sujet",
+      "family": "formules"
+    },
+    {
+      "find": "plongez dans",
+      "mode": "report",
+      "hint": "entre dans le sujet",
+      "family": "formules"
+    },
+    {
+      "find": "découvrez comment",
+      "mode": "report",
+      "hint": "montre comment, directement",
+      "family": "formules"
+    },
+    {
+      "find": "tirer parti de",
+      "mode": "report",
+      "hint": "« utiliser »",
+      "family": "verbes"
+    },
+    {
+      "find": "exploiter pleinement",
+      "mode": "report",
+      "hint": "« utiliser »",
+      "family": "verbes"
+    },
+    {
+      "find": "libérer votre potentiel",
+      "mode": "report",
+      "hint": "dis le résultat",
+      "family": "verbes"
+    },
+    {
+      "find": "libérer ton potentiel",
+      "mode": "report",
+      "hint": "dis le résultat",
+      "family": "verbes"
+    },
+    {
+      "find": "libérer tout votre potentiel",
+      "mode": "report",
+      "hint": "dis le résultat",
+      "family": "verbes"
+    },
+    {
+      "find": "libérer tout ton potentiel",
+      "mode": "report",
+      "hint": "dis le résultat",
+      "family": "verbes"
+    },
+    {
+      "find": "maîtriser l'art de",
+      "mode": "report",
+      "hint": "« savoir »",
+      "family": "verbes"
+    },
+    {
+      "find": "maîtriser l’art de",
+      "mode": "report",
+      "hint": "« savoir »",
+      "family": "verbes"
+    },
+    {
+      "find": "passer au niveau supérieur",
+      "mode": "report",
+      "hint": "dis le palier, chiffré",
+      "family": "instagram"
+    },
+    {
+      "find": "passez à la vitesse supérieure",
+      "mode": "report",
+      "hint": "dis le palier, chiffré",
+      "family": "instagram"
+    },
+    {
+      "find": "faire exploser ton compte",
+      "mode": "report",
+      "hint": "dis le chiffre visé",
+      "family": "instagram"
+    },
+    {
+      "find": "faire exploser votre compte",
+      "mode": "report",
+      "hint": "dis le chiffre visé",
+      "family": "instagram"
+    },
+    {
+      "find": "hacker l'algorithme",
+      "mode": "report",
+      "hint": "dis ce qui fait la portée",
+      "family": "instagram"
+    },
+    {
+      "find": "hacker l’algorithme",
+      "mode": "report",
+      "hint": "dis ce qui fait la portée",
+      "family": "instagram"
+    },
+    {
+      "find": "l'algorithme adore",
+      "mode": "report",
+      "hint": "dis ce que la plateforme pousse",
+      "family": "instagram"
+    },
+    {
+      "find": "l’algorithme adore",
+      "mode": "report",
+      "hint": "dis ce que la plateforme pousse",
+      "family": "instagram"
+    },
+    {
+      "find": "contenu de valeur",
+      "mode": "report",
+      "hint": "dis ce que le contenu apprend",
+      "family": "instagram"
+    },
+    {
+      "find": "connexion authentique",
+      "mode": "report",
+      "hint": "dis ce qui crée le lien",
+      "family": "instagram"
+    }
+  ],
+  "structures": [
+    {
+      "id": "fr-pas-seulement",
+      "name": "« Ce n'est pas seulement X, c'est Y »",
+      "regex": "(?i)\\bce n['’]est pas (?:seulement|juste|qu['’]une?) [^.!?\\n]{2,60}[,.] c['’]est\\b",
+      "fix": "Dis Y directement. Le contraste fabriqué est la signature la plus reconnaissable."
+    },
+    {
+      "id": "fr-non-seulement",
+      "name": "« Non seulement X mais aussi Y »",
+      "regex": "(?i)\\bnon seulement\\b[^.!?\\n]{2,80}\\bmais (?:aussi|également)\\b",
+      "fix": "Garde la partie la plus forte, coupe l'autre."
+    },
+    {
+      "id": "fr-le-resultat",
+      "name": "Question rhétorique seule sur sa ligne",
+      "regex": "(?im)^\\s*(?:le résultat|la suite|le pire|le meilleur|le secret)\\s*\\?\\s*$",
+      "fix": "Donne le résultat sans l'annoncer."
+    },
+    {
+      "id": "fr-voici-ce-que",
+      "name": "« Voici ce que j'ai appris »",
+      "regex": "(?i)\\bvoici ce que (?:j['’]ai|nous avons) appris\\b",
+      "fix": "Commence par la leçon elle-même."
+    },
+    {
+      "id": "fr-dans-cette-video",
+      "name": "Préambule vidéo (« dans cette vidéo, je vais vous montrer »)",
+      "regex": "(?i)\\b(?:dans (?:cette|la) (?:vidéo|reel)|aujourd['’]hui je vais (?:te|vous) montrer|je vais (?:te|vous) (?:montrer|expliquer) comment)\\b",
+      "fix": "Ouvre directement sur le résultat."
+    },
+    {
+      "id": "fr-follow-bait",
+      "name": "Appel réflexe à s'abonner ou identifier",
+      "regex": "(?i)\\b(?:abonne-toi pour plus|abonnez-vous pour plus|identifie (?:quelqu['’]un|un ami) qui|double tap si|partage si)\\b",
+      "fix": "Une seule demande, liée au post, ou aucune."
+    },
+    {
+      "id": "fr-engagement-bait",
+      "name": "Appât d'engagement réflexe en fin de ligne",
+      "regex": "(?im)\\b(?:d['’]accord \\?|vous en pensez quoi \\?|qui d['’]autre\\b|j['’]ai tort \\?)\\s*$",
+      "fix": "Pose une vraie question, à laquelle on peut répondre en un mot."
+    },
+    {
+      "id": "fr-en-resume",
+      "name": "Panneau de conclusion de dissertation",
+      "regex": "(?i)(?:^|[.!?]\\s+)(?:en résumé|en conclusion|pour conclure|en somme)\\b",
+      "fix": "Supprime le panneau. Si la fin est bonne, elle se voit."
+    },
+    {
+      "id": "fr-triad",
+      "name": "Triade de noms abstraits (« la régularité, la créativité et la persévérance »)",
+      "regex": "(?i)\\b(?:(?:la|le|l['’]|les)\\s?)?\\w+(?:ité|ence|ance|isme|ment|tion|eur|ude)s?, (?:(?:la|le|l['’]|les)\\s?)?\\w+(?:ité|ence|ance|isme|ment|tion|eur|ude)s?,? et (?:(?:la|le|l['’]|les)\\s?)?\\w+(?:ité|ence|ance|isme|ment|tion|eur|ude)s?\\b",
+      "fix": "Garde le plus précis des trois, et donne un exemple."
+    },
+    {
+      "id": "fr-que-ce-soit",
+      "name": "« Que ce soit X ou Y »",
+      "regex": "(?i)\\bque ce soit\\b[^.!?\\n]{2,60}\\bou\\b",
+      "fix": "Choisis à qui tu parles."
+    },
+    {
+      "id": "fr-il-ne-sagit-pas",
+      "name": "« Il ne s'agit pas seulement de »",
+      "regex": "(?i)\\bil ne s['’]agit pas (?:seulement|juste|uniquement) de\\b",
+      "fix": "Dis directement ce dont il s'agit."
+    },
+    {
+      "id": "fr-pret-a",
+      "name": "« Prêt à … ? »",
+      "regex": "(?im)^\\s*prêt(?:e|s|es)? à [^?\\n]{2,60}\\?",
+      "fix": "Supprime la question, donne la première étape."
+    },
+    {
+      "id": "fr-et-si",
+      "name": "« Et si je vous disais que »",
+      "regex": "(?i)\\bet si je (?:vous|te) disais que\\b",
+      "fix": "Dis-le."
+    },
+    {
+      "id": "fr-imaginez",
+      "name": "« Imaginez : »",
+      "regex": "(?im)^\\s*imagine[sz]?\\s*[:,]",
+      "fix": "Raconte ce qui s'est vraiment passé."
+    },
+    {
+      "id": "fr-bonne-nouvelle",
+      "name": "Teaser rhétorique (« La bonne nouvelle ? », « Spoiler : »)",
+      "regex": "(?im)^\\s*(?:la bonne nouvelle\\s*\\?|spoiler\\s*:)",
+      "fix": "Donne la nouvelle sans l'annoncer."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "multilingual-skills-for-instagram",
+  "description": "For Instagram: multilingual Claude skills (English, French, Tunisian Darija).",
+  "owner": {
+    "name": "medyassinjabberi-ship-it",
+    "url": "https://github.com/medyassinjabberi-ship-it"
+  },
+  "plugins": [
+    {
+      "name": "multilingual-skills-for-instagram",
+      "description": "For Instagram: 13 multilingual Claude skills (English, French, Tunisian Darija in Arabic script or arabizi) for reels, hooks, captions, stories, carousels, planning, comments and replies. No invented Darija, no fake scores outside English.",
+      "source": "./",
+      "category": "productivity",
+      "homepage": "https://github.com/medyassinjabberi-ship-it/multilingual-skills-for-instagram"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "multilingual-skills-for-instagram",
+  "description": "For Instagram: 13 multilingual Claude skills (English, French, Tunisian Darija in Arabic script or arabizi) for reels, hooks, captions, stories, carousels, planning, comments and replies. No invented Darija, no fake scores outside English.",
+  "version": "1.0.0",
+  "author": {
+    "name": "medyassinjabberi-ship-it",
+    "url": "https://github.com/medyassinjabberi-ship-it"
+  },
+  "homepage": "https://github.com/medyassinjabberi-ship-it/multilingual-skills-for-instagram",
+  "repository": "https://github.com/medyassinjabberi-ship-it/multilingual-skills-for-instagram",
+  "license": "MIT",
+  "keywords": [
+    "instagram",
+    "reels",
+    "content",
+    "writing",
+    "humanizer",
+    "multilingual",
+    "french",
+    "darija",
+    "arabic",
+    "arabizi"
+  ]
+}
