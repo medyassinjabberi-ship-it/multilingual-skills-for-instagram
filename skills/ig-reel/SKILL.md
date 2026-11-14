@@ -110,7 +110,7 @@ separate list with timings, and then:
 
 ```
 REEL READY
-hook:       #3 Nobody Tells You, scored 86 STRONG
+hook:       #1 Cost Confession, scored 54.8 OK
 length:     28.4s across 9 beats at 165 wpm
 on-screen:  6 cards
 humanizer:  4 artefacts stripped, human score 81 PASS
@@ -162,15 +162,17 @@ Write it separately, every time. It is read before it is heard.
 
 ```
 HOOKS  (scored)
-  86  STRONG  #5  Time Collapse   "Proposals used to take me five hours. Twenty minutes now."
-                                  on screen: 5 HOURS -> 20 MIN
-  71  STRONG  #1  Cost Confession "I billed four hours a week for formatting. For two years."
+  54.8  OK    #1  Cost Confession "I billed four hours a week for formatting. For two years."
                                   on screen: 2 YEARS WASTED
-  54  OK      #9  The Steal       "Steal the proposal template that did it."
+  51.2  OK    #5  Time Collapse   "Proposals used to take me five hours. Twenty minutes now."
+                                  on screen: 5 HOURS -> 20 MIN
+  36.6  WEAK  #9  The Steal       "Steal the proposal template that did it."
                                   on screen: STEAL THIS
 
-Shooting #5: the ratio is believable, it reads in one glance on screen,
-and the number is yours.
+Both top hooks clear 50 but neither is STRONG: the weakest check on each is
+STAKES (nothing in the line is at risk). Shooting #1: it scores highest and the
+cost is the user's own. If they prefer #5 because it reads in one glance on
+screen, add what the five hours cost them and re-run before writing.
 ```
 
 ## Language (applies to every skill in this pack)

@@ -163,7 +163,7 @@ say tomorrow.
 SWIPE  ·  38 reels  ·  7 accounts  ·  baseline: account median
 
 OUTLIERS (above 3x)
-  38.4x  hook 86  #3  Nobody Tells You   @acct_a    412,000  (median 10,700)
+  38.5x  hook 86  #3  Nobody Tells You   @acct_a    412,000  (median 10,700)
   11.2x  hook 79  #9  The Steal          @acct_c    180,000  (median 16,100)
   ...
 
