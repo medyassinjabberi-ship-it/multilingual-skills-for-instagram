@@ -1,101 +1,144 @@
+<div align="center">
+
 # multilingual-skills-for-instagram
 
-**FR** · [EN below](#english)
+### Someone to run your Instagram. Probably better than you.
 
-13 skills Claude pour gérer un compte Instagram, en **anglais, français et darija** (écriture arabe ou arabizi). Gratuit, MIT, sans inscription, sans clé API.
+**13 Claude skills** that find what works in your niche, write your reels, plan your week and draft your replies.<br>
+In **English**, **French** and **Tunisian Darija** (Arabic script or arabizi).
 
-**Rien n'est publié sans toi.** Les skills écrivent, c'est toi qui postes.
+![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-D97757)
+![skills](https://img.shields.io/badge/skills-13-111111)
+![languages](https://img.shields.io/badge/EN%20%7C%20FR%20%7C%20darija-ok-2ea44f)
+![MIT](https://img.shields.io/badge/license-MIT-blue)
 
-## Installer
+</div>
 
-Dans **Claude Code** (les plugins ne s'installent pas dans l'app Claude du téléphone) :
+---
+
+## The problem
+
+Every week, same story: a blank page, a weak hook, a post that goes out late.
+
+**This pack does the work. You film and you post.**
+
+## What it changes for you
+
+### 🔍 "I don't know what to post."
+`/ig-viral` goes and looks at what is **actually** working in your niche. Not raw views: every reel is compared with its own account's median. A big account doing 400,000 views just had a normal day. A small account doing 10× its average found something, and that is what you can copy. You walk away with a swipe file: every reel that broke out, the hook formula it used, ready to shoot.
+
+### 🎬 "My hook is weak and I can't even tell."
+`/ig-reel` gives you 3 hooks drawn from 26 formulas and has a real script score them **before** you shoot. Then it writes the script, the on-screen text and the timing.
+
+```
+HOOK RANKING
+==============================================================================
+->  84.4 STRONG  Stop posting at 9am. Your audience is asleep.
+    80.8 STRONG  3 hooks I stole from accounts with 1M followers
+    39.2 WEAK    Here's a quick tip about Instagram growth
+
+Shoot the top one. If the top one is under 50, none of these are the hook.
+```
+<sub>Real `hookscore.py` output, shortened. The score out of 100 exists in English only: in other languages each signal is shown on its own and Claude judges the rest with a grid.</sub>
+
+### 📅 "I post whenever I have time."
+`/ig-plan` builds your week: what to post, which format, which day, what time (from your Insights), and who to engage with. `/ig-audit` reads your past posts and tells you what really worked, why, and what to **stop** doing.
+
+### 💬 "Comments everywhere, no time to answer."
+`/ig-reply` sorts them all: the potential client describing your problem, the real question, the critic, the troll. It drafts the replies worth sending and skips the rest. A question thirty people are asking? It turns it into your next reel.
+
+### 🤖 "It sounds like ChatGPT from a mile away."
+Every text goes through `/ig-human`, which hunts down AI tics. Your captions, replies and DMs sound like you, not like an assistant.
+
+### 🌍 Your language, your words.
+English, French or Darija (Arabic script or arabizi). For Darija it never invents anything: it gives you the structure of each line and you put in your own words.
+
+### 🫵 Nothing goes out without you.
+It never posts, likes or comments. It writes, **you publish**. No API key, no signup. The pack is free (you need Claude Code).
+
+## Your week in 5 commands
+
+```
+monthly     /ig-viral      → what actually worked in your niche
+monday      /ig-plan       → what to post, which format, which day, what time
+tuesday     /ig-reel       → your idea becomes a reel: hooks, script, on-screen text, timing
+            /ig-caption    → the caption, checked against what shows before "… more"
+every day   /ig-reply      → your comments sorted, replies drafted
+```
+
+## The 13 skills
+
+**Find and plan**
+
+| command | what it does |
+| --- | --- |
+| `/ig-viral` | You give it 6 to 12 accounts in your niche; Claude reads them in your browser (logged in as you) or from what you paste, and ranks each reel against its own account's median. |
+| `/ig-audit` | What really worked in your own posts, and why. |
+| `/ig-plan` | Your week: what to post, which format, when (from your Insights, Ramadan included), and who to engage with. |
+
+**Write**
+
+| command | what it does |
+| --- | --- |
+| `/ig-reel` | One idea → one reel: 3 hooks from 26 formulas, the script, the on-screen text, the timing. |
+| `/ig-carousel` | The cover that earns the swipe, then the copy for each slide. |
+| `/ig-caption` | The caption, checked against what the feed shows before "… more". 5 hashtags max, the platform limit since December 2025. |
+| `/ig-story` | Today's stories, and which sticker goes where. |
+| `/ig-repurpose` | One long video → 4 to 6 posts (English ↔ French). |
+| `/ig-human` | Strips the ChatGPT out of any text. |
+
+**Reply and grow**
+
+| command | what it does |
+| --- | --- |
+| `/ig-reply` | Sorts the comments under your posts and drafts the replies. |
+| `/ig-comment` | Comments on other people's posts that sound human. |
+| `/ig-dm` | DMs: keyword delivery, first message, follow-ups. |
+| `/ig-profile` | Your profile scored against 12 criteria, then rewritten. |
+
+## Install
+
+In **Claude Code** (plugins do not install in the Claude mobile or chat app):
 
 ```
 /plugin marketplace add medyassinjabberi-ship-it/multilingual-skills-for-instagram
 /plugin install multilingual-skills-for-instagram@multilingual-skills-for-instagram
 ```
 
-Ou colle ceci dans Claude :
+Or just paste this into Claude Code:
 
 ```
 https://github.com/medyassinjabberi-ship-it/multilingual-skills-for-instagram
 
-Installe ce skill, puis vérifie que /ig-reel marche.
+Install this skill, then check that /ig-reel works.
 ```
 
-Il faut **Python 3** pour les 5 outils qui calculent (hooks, timing, caption, humanizer, viral).
-- Sous Windows : `winget install Python.Python.3.13`. Si la commande `python3` n'existe pas, les skills utilisent `py -3` ou `python`.
-- Sous Mac : Python est souvent déjà là.
+**Then one step:** copy `templates/voice.md` to `~/.claude/instagram/voice.md` and fill it in. That is your voice: how you talk, what you never say, who you are talking to. Above all set the `language:` line (`en`, `fr`, `ar` or `aeb-latn`). Every skill reads it.
 
-Ensuite, copie `templates/voice.md` dans `~/.claude/instagram/voice.md` et remplis-le. Mets surtout la ligne `language:` (`fr`, `en`, `ar` ou `aeb-latn`). Tous les skills la lisent.
+<details>
+<summary><b>Python (for the 5 tools that compute)</b></summary>
 
-## Ce que fait ce pack
+The hook, timing, caption, humanizer and viral tools run on **Python 3**.
+- Windows: `winget install Python.Python.3.13`. If `python3` does not exist, the skills use `py -3` or `python`.
+- Mac: Python is often already there.
 
-- **Le français reste du français.** Les espaces insécables, les `’` et les `« »` sont gardés. La liste anti-ChatGPT française ne remplace que ce qui est sans risque ; le reste est signalé, et c'est Claude qui réécrit la phrase.
-- **L'arabe et l'arabizi sont comptés correctement.** Les marques de direction et les emojis ne sont jamais détruits. Plus de plantage sous Windows dès qu'il y a de l'arabe.
-- **Pas de fausse note.** Les scores ont été calibrés sur l'anglais : hors anglais, chaque signal s'affiche seul, avec la mention « non calibré », et Claude juge le sens avec une grille.
-- **La darija n'est jamais inventée.** Claude donne la structure de chaque ligne (son rôle, ce qu'elle doit contenir, sa durée) et te laisse les mots. Il propose une formulation seulement si tu la demandes, marquée « brouillon à valider ».
-- **5 hashtags maximum**, comme la limite d'Instagram depuis décembre 2025.
-- **Ramadan :** `/ig-plan` prend les heures de tes Insights et tient compte du Ramadan.
+</details>
 
-## Les 13 skills
-
-| commande | ce qu'elle fait |
-| --- | --- |
-| `/ig-reel` | Une idée → un reel : 3 hooks tirés de 26 formules, le script, le texte à l'écran, le timing. |
-| `/ig-viral` | Trouve ce qui marche dans ta niche, classé par rapport à la médiane de chaque compte. |
-| `/ig-caption` | La caption, vérifiée : ce que le feed montre avant « … plus ». |
-| `/ig-carousel` | La cover qui fait swiper, puis le texte de chaque slide. |
-| `/ig-story` | Les stories du jour, et quel sticker mettre où. |
-| `/ig-profile` | Ton profil noté sur 100 selon 12 critères, puis réécrit. |
-| `/ig-plan` | La semaine : quoi poster, quel format, quand, et avec qui interagir. |
-| `/ig-human` | Retire les traces de ChatGPT et note le texte. |
-| `/ig-comment` | Des commentaires chez les autres qui sonnent humain. |
-| `/ig-reply` | Trie les commentaires sous tes posts et écrit les réponses. |
-| `/ig-dm` | Les DM : la livraison du mot-clé, le premier message, les relances. |
-| `/ig-repurpose` | Une vidéo longue → 4 à 6 posts (anglais ↔ français). |
-| `/ig-audit` | Ce qui a vraiment marché dans tes posts, et pourquoi. |
-
-## Tests
+<details>
+<summary><b>Tests</b></summary>
 
 ```bash
-python3 -X utf8 tests/test_pack.py
+python3 -X utf8 tests/test_pack.py   # Windows: py -3 -X utf8 tests/test_pack.py
 ```
 
-Ces tests vérifient :
-- que chaque composant fait ce qu'il doit ;
-- que le français, l'arabe et l'arabizi ne sont jamais abîmés ;
-- que tout tourne sous Windows, même avec de l'arabe.
+They check that every component does its job, that French, Arabic and arabizi text is never damaged, and that everything runs on Windows, even with Arabic.
 
----
+</details>
 
-## English
-
-13 Claude skills to run an Instagram account, in **English, French and Tunisian Darija** (Arabic script or arabizi). Free, MIT, no signup, no API key.
-
-**Nothing gets posted until you say yes.** These skills write. You post.
-
-### Install
-
-```
-/plugin marketplace add medyassinjabberi-ship-it/multilingual-skills-for-instagram
-/plugin install multilingual-skills-for-instagram@multilingual-skills-for-instagram
-```
-
-You need **Claude Code** (plugins do not install in the Claude chat app) and Python 3 for the five tools; on Windows, `py -3` or `python` works if `python3` does not. Then copy `templates/voice.md` to `~/.claude/instagram/voice.md` and set its `language:` line to `en`, `fr`, `ar` or `aeb-latn`.
-
-### What it does
-
-- **Unicode-safe tools:**
-  - words are counted correctly in French, Arabic script and arabizi;
-  - French typography and Arabic direction marks are kept;
-  - emoji and flags are never broken;
-  - no crash on a Windows console.
-- **Honest scores:** the thresholds were calibrated on English. In any other language each signal is shown on its own, marked "not calibrated", and Claude judges meaning with a grid in the SKILL.md.
-- **Darija is never invented:** Claude gives the structure with blanks to fill, and writes a draft only on request.
-
-### License
+## License
 
 MIT. See [LICENSE](LICENSE).
 
-*Not affiliated with, endorsed by or sponsored by Instagram or Meta. Instagram is a trademark of Meta Platforms, Inc. · Ce projet n'est ni affilié à Instagram ni à Meta.*
+---
+
+<sub>Not affiliated with, endorsed by or sponsored by Instagram or Meta. Instagram is a trademark of Meta Platforms, Inc.</sub>
