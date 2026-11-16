@@ -16,10 +16,27 @@ executed. Run it once a week, on the same day.
 
 ## Input
 
-If `~/.claude/instagram/voice.md`, `swipe.md` and `log.md` exist, read them.
-The swipe file is the user's own evidence from `/ig-viral` about which formulas
-are landing in their niche right now, and it outranks anything in this file.
-The log stops the plan repeating a theme from the last fortnight.
+If `~/.claude/instagram/voice.md`, `insights.md`, `swipe.md` and `log.md`
+exist, read them. `insights.md` is what worked on this account, computed by
+`/ig-audit`; it outranks everything. The swipe file is the user's evidence from
+`/ig-viral` about which formulas are landing in their niche right now, and it
+outranks anything in this file.
+
+Then run the journal, which `/ig-reel` and `/ig-carousel` keep:
+
+```bash
+python3 ../ig-reel/journal.py recent --days 14
+```
+
+Its REPEATS block names any formula or theme used twice in a fortnight, two
+posts of the same type back to back, and scripts approved but never marked
+posted. Do not plan a repeat without saying so, and ask about the unposted ones
+before planning new work: a backlog of shot-but-not-posted reels is next week.
+If `ig-reel` is not installed next to this skill, read
+`~/.claude/instagram/journal.jsonl` directly: one JSON object per line, with
+`id`, `created`, `status` (ready, posted, dropped), `format`, `hook`, `formula`,
+`lang`, `theme`, `type` and `posted`. If the journal is missing, fall back on
+`log.md`.
 
 If they do not exist, ask for four things and write them down:
 
@@ -47,7 +64,10 @@ Mix across the week, never two of the same type back to back:
 | **Offer** | 1 per fortnight | what you sell, said plainly, no apology. Carousel or stories. |
 
 For each slot give: the theme, the specific angle from what actually happened
-this week, the format, and the hook formula number from `ig-reel/hooks.json`.
+this week, the format, the type (proof, teach, opinion, story, offer), and the
+hook formula number from `ig-reel/hooks.json`. When `insights.md` names a
+formula as "worth testing on purpose", put it in the week on purpose, once, and
+say it is the test.
 Not a topic, an angle. "AI" is not a plan. "The proposal we lost because the
 draft had an em dash in it" is a Reel.
 

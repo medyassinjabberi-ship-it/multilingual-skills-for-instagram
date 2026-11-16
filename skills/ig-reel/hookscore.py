@@ -331,6 +331,9 @@ def check_address(text, lang="en"):
 CHECKS = ["LENGTH", "SPECIFICITY", "STAKES", "FRONTLOAD", "ADDRESS"]
 
 
+PENDING = re.compile(r"\{\{[^{}]*\}\}")
+
+
 def run(text, lang="en"):
     """(results, overall, verdict, flags).
 
@@ -338,6 +341,9 @@ def run(text, lang="en"):
     `overall` is None and the verdict NOT CALIBRATED: there is no number to
     relay. Rank those hooks with issues() instead.
     """
+    # {{your number}} is a number the user still has to give: score the line as it
+    # will be said, with a number in that place. The report says it is pending.
+    text = PENDING.sub("100", text)
     results = {
         "LENGTH": check_length(text, lang),
         "SPECIFICITY": check_specificity(text, lang),
@@ -383,6 +389,8 @@ def render_one(text, results, overall, verdict, flags, lang="en", out=sys.stdout
     print("\nHOOK SCORE", file=out)
     print("=" * 62, file=out)
     print(f"  \"{text.strip()}\"", file=out)
+    if PENDING.search(text):
+        print("  pending: {{...}} scored as a number. Fill it with the real one before shooting.", file=out)
     print(f"  language: {L.LANG_NAMES.get(lang, lang)}\n", file=out)
     for name in CHECKS:
         score, detail = results[name]
@@ -406,10 +414,13 @@ def render_one(text, results, overall, verdict, flags, lang="en", out=sys.stdout
 
 
 def render_table(rows, lang="en", out=sys.stdout):
-    title = "HOOK RANKING" if L.calibrated(lang) else "HOOK RANKING  (mechanics only, not calibrated)"
+    title = "HOOK GATE" if L.calibrated(lang) else "HOOK GATE  (mechanics only, not calibrated)"
     print(f"\n{title}\n" + "=" * 78, file=out)
     for i, r in enumerate(rows, 1):
-        mark = "->" if i == 1 else "  "
+        if L.calibrated(lang):
+            mark = "ok " if r["score"] >= 50 and not r["flags"] else "out"
+        else:
+            mark = "ok " if not r["issues"] else "out"
         hook = r["hook"] if len(r["hook"]) <= 62 else r["hook"][:59] + "..."
         if L.calibrated(lang):
             print(f"{mark} {r['score']:5.1f} {r['verdict']:<7} {hook}", file=out)
@@ -418,9 +429,12 @@ def render_table(rows, lang="en", out=sys.stdout):
         print(f"        weakest: {r['weakest']} ({r['checks'][r['weakest']]['score']:.0f})", file=out)
         for f in r["flags"]:
             print(f"        dealbreaker: {f}", file=out)
+        if PENDING.search(r["hook"]):
+            print("        pending: {{...}} scored as a number. Fill it with the real one before shooting.", file=out)
     if L.calibrated(lang):
-        print("\nShoot the top one. If the top one is under 50, none of these are the hook.\n",
-              file=out)
+        print("\nHooks marked out are out: under 50 or a dealbreaker. Between the ones marked ok,"
+              "\nthe score does not pick the winner (AUC 0.56 within one creator's own hooks): choose"
+              "\non stakes, the user's real proof and what worked on this account.\n", file=out)
     else:
         print(f"\n{L.uncalibrated_note(lang)}\nRanked by rules broken (length, no number, "
               "late payload, greeting), fewest first.\nIt does not say which hook is good. "

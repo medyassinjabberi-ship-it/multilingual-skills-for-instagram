@@ -11,6 +11,10 @@ What is tested:
   - the intended English behaviour changes, one by one;
   - real crashes: every script is run on a cp1252 console with Arabic input.
 
+  - the tools that close the loop: journal, audit (baselines, guarded
+    comparisons, journal join), swipe formula column, beats cards, voice
+    check, carousel lint and render (render skipped without a browser).
+
 Not tested here: whether a score predicts views. That needs the held-out set of
 real hooks (tests/heldout/), which is never used to build a word list.
 """
@@ -73,13 +77,16 @@ def voice(body):
     return path
 
 
-class LangSync(unittest.TestCase):
+class SharedSync(unittest.TestCase):
     def test_copies_identical(self):
-        src = os.path.join(PACK, "shared", "lang.py")
-        for skill in ("ig-human", "ig-caption", "ig-reel", "ig-viral"):
-            with self.subTest(skill=skill):
-                self.assertTrue(filecmp.cmp(src, os.path.join(SKILLS, skill, "lang.py"),
-                                            shallow=False), "run tools/sync_lang.py")
+        spec = importlib.util.spec_from_file_location("sync_lang", os.path.join(PACK, "tools", "sync_lang.py"))
+        sync = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sync)
+        self.assertIn("ig-audit", sync.SHARED["lang.py"])
+        self.assertEqual(set(sync.SHARED["journal.py"]), {"ig-reel", "ig-carousel", "ig-audit"})
+        for src, target in sync.pairs():
+            with self.subTest(target=target):
+                self.assertTrue(filecmp.cmp(src, target, shallow=False), "run tools/sync_lang.py")
 
     def test_sync_check_passes(self):
         r = subprocess.run([sys.executable, os.path.join(PACK, "tools", "sync_lang.py"), "--check"],
@@ -526,6 +533,508 @@ class CommandLine(unittest.TestCase):
         r = run_script(os.path.join(SKILLS, "ig-reel", "hookscore.py"), ["--hook", "hola", "--lang", "es"])
         self.assertNotEqual(r.returncode, 0)
         self.assertIn(b"not a language", r.stderr)
+
+
+# ------------------------------------------------------------------ v1.1: tools that close the loop
+
+import datetime as dt  # noqa: E402
+
+JR = load("ig-reel", "journal")
+AU = load("ig-audit", "audit")
+V = load("ig-human", "voice")
+CA = load("ig-carousel", "carousel")
+
+
+def audit_rows(rows, header="date\tformat\tviews"):
+    text = header + "\n" + "\n".join("\t".join(map(str, r)) for r in rows)
+    posts, mapping, notes = AU.read_table(text)
+    return posts, mapping, notes
+
+
+def series(n, start=dt.date(2026, 1, 1), fmt="reel", views=1000, step=3):
+    return [((start + dt.timedelta(days=step * i)).isoformat(), fmt, views) for i in range(n)]
+
+
+class Journal(unittest.TestCase):
+    def setUp(self):
+        self.path = os.path.join(tempfile.mkdtemp(), "journal.jsonl")
+        self.today = dt.date(2026, 11, 16)
+
+    def test_add_posted_round_trip(self):
+        e = JR.load(self.path)
+        a = JR.add(e, "reel", "Proposals took five hours.", self.today, formula="5", lang="en")
+        b = JR.add(e, "reel", "Second.", self.today)
+        self.assertEqual((a["id"], b["id"]), ("20261116-1", "20261116-2"))
+        JR.mark_posted(e, a["id"], dt.date(2026, 11, 18), "https://www.instagram.com/reel/ABC/?igsh=x")
+        JR.save(e, self.path)
+        back = JR.load(self.path)
+        self.assertEqual(back[0]["status"], "posted")
+        self.assertEqual(back[0]["posted"], "2026-11-18")
+        self.assertEqual(back[1]["status"], "ready")
+        self.assertEqual(JR.norm_link(back[0]["permalink"]), "instagram.com/reel/ABC")
+
+    def test_arabic_hook_survives(self):
+        e = JR.load(self.path)
+        JR.add(e, "reel", "خسرت 18 ألف دينار", self.today)
+        JR.save(e, self.path)
+        self.assertEqual(JR.load(self.path)[0]["hook"], "خسرت 18 ألف دينار")
+
+    def test_recent_names_repeats_and_unposted(self):
+        e = []
+        JR.add(e, "reel", "a", dt.date(2026, 11, 1), formula="3", theme="Devis", type="teach")
+        JR.add(e, "reel", "b", dt.date(2026, 11, 10), formula="3", theme="devis", type="teach")
+        JR.mark_posted(e, e[0]["id"], dt.date(2026, 11, 2))
+        JR.mark_posted(e, e[1]["id"], dt.date(2026, 11, 11))
+        JR.add(e, "reel", "c", dt.date(2026, 11, 5))
+        _, notes = JR.recent(e, self.today, 14)
+        text = " ".join(notes)
+        self.assertIn("formula '3' used 2 times", text)
+        self.assertIn("theme 'devis' used 2 times", text)
+        self.assertIn("back to back", text)
+        self.assertIn("never marked posted", text)
+
+    def test_bad_values_refused(self):
+        with self.assertRaises(ValueError):
+            JR.add([], "tiktok", "x", self.today)
+        with self.assertRaises(ValueError):
+            JR.parse_date("16/11/2026")
+        self.assertEqual(JR.main(["--file", self.path, "posted", "nope"]), 2)
+
+
+class AuditColumns(unittest.TestCase):
+    def test_french_headers(self):
+        _, m, _ = audit_rows([("2026-01-01", "Reel", "1 200", "900", "4")],
+                             "Date de publication\tType\tVues\tCouverture\tPartages")
+        self.assertEqual(m, {"date": "Date de publication", "format": "Type", "views": "Vues",
+                             "reach": "Couverture", "shares": "Partages"})
+
+    def test_impressions_are_never_views(self):
+        with self.assertRaises(AU.AuditError):
+            audit_rows([("2026-01-01", "5000")], "date\tImpressions")
+        posts, m, notes = audit_rows([("2026-01-01", "5000", "4000")], "date\tImpressions\tReach")
+        self.assertNotIn("views", m)
+        self.assertTrue(any("Impressions" in n for n in notes))
+
+    def test_two_columns_for_one_field_is_an_error(self):
+        with self.assertRaises(AU.AuditError):
+            audit_rows([("1", "2")], "Views\tVues")
+        posts, m, _ = AU.read_table("Views\tPlays\n1\t2\n", {"views": "Plays"})
+        self.assertEqual(posts[0]["views"], 2)
+
+    def test_counts_and_percents(self):
+        for cell, n in (("1 200", 1200), ("1,200", 1200), ("12k", 12000), ("1,2 M", 1200000), ("", None)):
+            self.assertEqual(AU.parse_count(cell), n)
+        for cell, v in (("45%", 0.45), ("45", 0.45), ("0.45", 0.45), ("45,5 %", 0.455)):
+            self.assertAlmostEqual(AU.parse_percent(cell), v)
+
+    def test_dates_read_as_a_column(self):
+        d = AU.parse_dates(["16/11/2026 18:30", "03/04/2026"])
+        self.assertEqual(d[1][0], dt.datetime(2026, 4, 3))
+        self.assertTrue(d[0][1])
+        d = AU.parse_dates(["11/16/2026", "03/04/2026"])
+        self.assertEqual(d[1][0], dt.datetime(2026, 3, 4))
+        with self.assertRaises(AU.AuditError):
+            AU.parse_dates(["03/04/2026", "05/06/2026"])
+
+
+class AuditMessyInput(unittest.TestCase):
+    TODAY = dt.date(2026, 12, 31)
+
+    def test_one_bad_date_is_named_and_the_rest_keep_their_baseline(self):
+        rows = series(20)
+        rows[4] = ("16 nov. 2026", "reel", 1000)
+        posts, _, notes = audit_rows(rows)
+        self.assertEqual(len(posts), 19)
+        self.assertTrue(any("line 6" in n and "not read" in n for n in notes))
+        a = AU.analyse(posts, today=self.TODAY)
+        self.assertTrue(a["dated"])
+
+    def test_two_digit_years(self):
+        d = AU.parse_dates(["16/11/26", "03/04/26"])
+        self.assertEqual(d[0][0], dt.datetime(2026, 11, 16))
+
+    def test_unreadable_views_have_their_own_reason(self):
+        rows = series(12)
+        rows[3] = (rows[3][0], "reel", "beaucoup")
+        rows[4] = (rows[4][0], "reel", "1470 vues")
+        posts, _, notes = audit_rows(rows)
+        self.assertTrue(any("views 'beaucoup' not read" in n for n in notes))
+        self.assertEqual(len(posts), 11)                 # "1470 vues" is read as 1470
+        self.assertIn(1470, [p["views"] for p in posts])
+
+    def test_a_column_of_dates_is_the_date(self):
+        posts, m, notes = AU.read_table("Publication\tVues\n" + "\n".join(
+            f"0{i}/08/2026 09:05\t{100 + i}" for i in range(1, 10)) + "\n13/08/2026 09:05\t50\n")
+        self.assertEqual(m["date"], "Publication")
+        self.assertTrue(any("read as the date" in n for n in notes))
+
+    def test_voice_numbered_lists_and_numbers(self):
+        path = voice("- **Words I would never say out loud:**\n\n  - game changer\n"
+                     "- **Clients, numbers or names I cannot say publicly:**\n  1. Acme\n  2. 18 400\n"
+                     "  3. Société Générale (banque)\n")
+        lists = V.read_voice(path)
+        self.assertEqual(lists, {"never": ["game changer"], "private": ["Acme", "18 400", "Société Générale"]})
+        hits = V.check("We made 18,400 with ACME. Also 18400. Société Générale paid.", lists)
+        self.assertEqual(len([h for h in hits if h["kind"] == "private"]), 3)
+
+    def test_hookscore_gate_and_pending_numbers(self):
+        import io
+        rows = [{"hook": h, "score": K.run(h, "en")[1], "verdict": K.run(h, "en")[2], "flags": K.run(h, "en")[3],
+                 "issues": [], "weakest": "STAKES", "checks": {"STAKES": {"score": 70}}}
+                for h in ("I lost {{your number}} on one clause.", "Hey guys, quick tip")]
+        buf = io.StringIO()
+        K.render_table(rows, "en", out=buf)
+        out = buf.getvalue()
+        self.assertNotIn("Shoot the top one", out)
+        self.assertIn("pending", out)
+        self.assertIn("out ", out)
+        self.assertTrue(any("Pending" in n for n in B.analyse("I lost {{your number}} on one clause.")["notes"]))
+
+    def test_carousel_blanks_fail_and_second_headline_is_kept(self):
+        settings, slides = CA.parse("# ____ ____\n____\n---\n# Real\n# Second line\nbody\n")
+        issues = CA.lint(settings, slides)
+        self.assertTrue(any(l == "FAIL" and "blanks" in m for l, _, m in issues))
+        self.assertIn("Second line", slides[1]["body"])
+        settings, slides = CA.parse("Note: my cover\n---\n# Two\nx\n")
+        self.assertEqual(settings, {})
+        self.assertEqual(len(slides), 2)
+
+    def test_zero_baseline_reason(self):
+        posts, _, _ = audit_rows(series(6, views=0) + [("2026-02-01", "reel", 50)])
+        a = AU.analyse(posts, today=self.TODAY)
+        self.assertIn("the baseline median is 0", {p["why"] for p in a["no_baseline"]})
+
+    def test_formats_read_by_what_they_contain(self):
+        for cell, fmt in (("Reel IG", "reel"), ("Reels vidéo", "reel"), ("Vidéo", "reel"),
+                          ("Carrousel", "carousel"), ("IG image", "photo"), ("Publication", "post")):
+            self.assertEqual(AU.norm_format(cell), fmt, cell)
+
+    def test_lengths_and_percent_columns(self):
+        self.assertEqual(AU.parse_length("0:28"), 28)
+        self.assertEqual(AU.parse_length("1:05"), 65)
+        self.assertEqual(AU.parse_percents(["1", "45", "60%"]), [0.01, 0.45, 0.6])
+        self.assertEqual(AU.parse_percents(["0.4", "0.6"]), [0.4, 0.6])
+
+    def test_leading_blank_line(self):
+        posts, _, _ = AU.read_table("\n\ndate\tviews\n2026-01-01\t10\n")
+        self.assertEqual(posts[0]["views"], 10)
+
+    def test_formula_ids_normalised(self):
+        posts, _, _ = audit_rows([("2026-01-01", "reel", 10, "#05"), ("2026-01-02", "reel", 10, "formule 5")],
+                                 "date	format	views	formula")
+        self.assertEqual({p["formula"] for p in posts}, {"5"})
+
+    def test_too_few_has_no_diagnosis_and_no_insights(self):
+        rows = [r + (100, 2) for r in series(10)] + [("2026-03-01", "reel", 9000, 100, 0)]
+        posts, _, _ = audit_rows(rows, "date	format	views	reach	follows")
+        a = AU.analyse(posts, today=self.TODAY)
+        self.assertTrue(a["too_few"])
+        self.assertEqual((a["diagnosis"], a["top"]), ([], []))
+        self.assertIn("Too few", AU.to_markdown(a))
+        self.assertNotIn("x reel", AU.to_markdown(a))
+
+    def test_day_and_hour_only_on_request(self):
+        posts, _, _ = audit_rows(series(40))
+        self.assertEqual(AU.analyse(posts, today=self.TODAY)["comparisons"]["when"], [])
+
+
+class AuditNumbers(unittest.TestCase):
+    TODAY = dt.date(2026, 12, 31)
+
+    def test_trailing_median_per_format(self):
+        rows = series(6, views=1000) + [("2026-01-19", "carousel", 50)] * 1
+        rows += [("2026-01-20", "reel", 4000)]
+        posts, _, _ = audit_rows(rows)
+        a = AU.analyse(posts, today=self.TODAY)
+        last = [p for p in posts if p["views"] == 4000][0]
+        self.assertEqual(last["baseline"], 1000)          # the carousel is not in a reel's baseline
+        self.assertAlmostEqual(last["multiple"], 4.0)
+        car = [p for p in posts if p["format"] == "carousel"][0]
+        self.assertIsNone(car["multiple"])                # no 5 earlier carousels: no baseline
+        self.assertIn(car, a["no_baseline"])
+
+    def test_window_is_the_previous_ten(self):
+        rows = series(10, views=100) + series(10, start=dt.date(2026, 3, 1), views=1000)
+        rows += [("2026-06-01", "reel", 2000)]
+        posts, _, _ = audit_rows(rows)
+        AU.analyse(posts, today=self.TODAY)
+        self.assertEqual(posts[-1]["baseline"], 1000)     # growth: old 100-view posts are out
+
+    def test_young_posts_are_left_out(self):
+        posts, _, _ = audit_rows(series(12) + [("2026-12-28", "reel", 9000)])
+        a = AU.analyse(posts, today=self.TODAY)
+        self.assertEqual(len(a["young"]), 1)
+        self.assertNotIn(posts[-1], a["pool"])
+
+    def test_too_few_says_so(self):
+        posts, _, _ = audit_rows(series(13))
+        a = AU.analyse(posts, today=self.TODAY)
+        self.assertTrue(a["too_few"])
+        self.assertEqual(a["comparisons"], {})
+        import io
+        buf = io.StringIO()
+        AU.render(a, {"views": "views"}, [], out=buf)
+        self.assertIn("TOO FEW TO COMPARE", buf.getvalue())
+
+    def test_missing_columns_are_na_not_estimates(self):
+        posts, _, _ = audit_rows(series(16))
+        a = AU.analyse(posts, today=self.TODAY)
+        p = a["pool"][0]
+        self.assertIsNone(p["shares_k"])
+        self.assertIsNone(p["hold3s"])
+
+    def test_small_groups_are_never_compared(self):
+        rows = [(d, f, v) for (d, f, v) in series(30)]
+        hdr = "date\tformat\tviews\tformula"
+        rows = [r + ("1" if i < 4 else "2",) for i, r in enumerate(rows)]
+        posts, _, _ = audit_rows(rows, hdr)
+        a = AU.analyse(posts, today=self.TODAY)
+        self.assertFalse([c for c in a["comparisons"]["formula"] if c["label"] == "#1"])
+
+    def test_a_strong_real_difference_is_named(self):
+        import random
+        rng = random.Random(3)
+        rows, d = [], dt.date(2026, 1, 1)
+        for i in range(40):
+            f = "1" if i % 2 else "2"
+            rows.append((d.isoformat(), "reel", int(1000 * rng.lognormvariate(0, 0.3) * (4 if f == "1" else 1)), f))
+            d += dt.timedelta(days=3)
+        posts, _, _ = audit_rows(rows, "date\tformat\tviews\tformula")
+        a = AU.analyse(posts, today=self.TODAY)
+        tiers = [c["tier"] for c in a["comparisons"]["formula"]]
+        self.assertEqual(tiers, ["clear"])               # two formulas: one comparison, not two
+
+    def test_wording_is_deterministic(self):
+        posts, _, _ = audit_rows([r + ("1" if i % 3 else "2",) for i, r in enumerate(series(40))],
+                                 "date\tformat\tviews\tformula")
+        a1 = AU.analyse(posts, today=self.TODAY)
+        posts, _, _ = audit_rows([r + ("1" if i % 3 else "2",) for i, r in enumerate(series(40))],
+                                 "date\tformat\tviews\tformula")
+        a2 = AU.analyse(posts, today=self.TODAY)
+        self.assertEqual([c["p"] for v in a1["comparisons"].values() for c in v],
+                         [c["p"] for v in a2["comparisons"].values() for c in v])
+
+    def test_profile_problem(self):
+        rows = [r + (100, 2) for r in series(20, views=1000)] + [("2026-03-15", "reel", 5000, 100, 0)]
+        posts, _, _ = audit_rows(rows, "date\tformat\tviews\treach\tfollows")
+        for p in posts:
+            p["reach"] = p["views"]
+        a = AU.analyse(posts, today=self.TODAY)
+        self.assertTrue(any(k == "profile" for k, _, _ in a["diagnosis"]))
+
+
+class AuditJournal(unittest.TestCase):
+    TODAY = dt.date(2026, 12, 31)
+
+    def test_join_by_link_then_by_unique_day(self):
+        rows = [r + ("",) for r in series(12)]
+        rows[5] = rows[5][:3] + ("https://www.instagram.com/reel/XYZ/",)
+        posts, _, _ = audit_rows(rows, "date\tformat\tviews\tpermalink")
+        entries = [
+            {"id": "a", "status": "posted", "posted": "2026-05-05", "format": "reel", "formula": "3",
+             "permalink": "https://instagram.com/reel/XYZ?igsh=1", "hook": "h1"},
+            {"id": "b", "status": "posted", "posted": rows[7][0], "format": "reel", "formula": "9", "hook": "h2"},
+            {"id": "c", "status": "posted", "posted": "2027-01-01", "format": "reel", "hook": "h3"},
+            {"id": "d", "status": "ready", "created": rows[8][0], "format": "reel"},
+        ]
+        a = AU.analyse(posts, entries, self.TODAY)
+        by = {e["id"]: p for e, p in a["matched"]}
+        self.assertEqual(by["a"]["formula"], "3")
+        self.assertEqual(by["a"]["match"], "link")
+        self.assertEqual(by["b"]["match"], "date")
+        self.assertEqual([e["id"] for e in a["unmatched"]], ["c"])
+
+    def test_a_link_that_is_not_in_the_table_never_falls_back_to_the_date(self):
+        rows = [r + ("",) for r in series(12)]
+        rows[5] = rows[5][:3] + ("https://www.instagram.com/reel/AAA4/",)
+        posts, _, _ = audit_rows(rows, "date	format	views	permalink")
+        entries = [{"id": "z", "status": "posted", "posted": rows[5][0], "format": "reel", "formula": "5",
+                    "permalink": "https://www.instagram.com/reel/ZZZ999/"},
+                   {"id": "y", "status": "posted", "posted": rows[6][0], "format": "reel",
+                    "permalink": "https://www.instagram.com/reel/aaa4/"}]
+        a = AU.analyse(posts, entries, self.TODAY)
+        self.assertEqual(a["matched"], [])               # shortcodes are case-sensitive too
+        self.assertIsNone(posts[5]["formula"])
+
+    def test_a_hand_edited_journal_date_does_not_crash(self):
+        posts, _, _ = audit_rows(series(12))
+        a = AU.analyse(posts, [{"id": "q", "status": "posted", "posted": "16/11/2026"}], self.TODAY)
+        self.assertEqual([e["id"] for e in a["unmatched"]], ["q"])
+        self.assertTrue(a["journal_notes"])
+        _, notes = JR.recent([{"id": "q", "status": "posted", "created": "2026-11-01", "posted": "16/11/2026"}],
+                             dt.date(2026, 11, 16))
+        self.assertTrue(any("cannot read" in n for n in notes))
+
+    def test_two_posts_the_same_day_are_not_guessed(self):
+        rows = series(12)
+        rows.append((rows[-1][0], "reel", 900))
+        posts, _, _ = audit_rows(rows)
+        entries = [{"id": "x", "status": "posted", "posted": rows[-1][0], "format": "reel", "formula": "1"}]
+        a = AU.analyse(posts, entries, self.TODAY)
+        self.assertEqual(a["matched"], [])
+
+
+class SwipeV11(unittest.TestCase):
+    def rows(self, n, formula=None, account=lambda i: f"@a{i % 6}"):
+        out = []
+        for i in range(n):
+            r = {"account": account(i), "followers": 9000, "median": 1000, "views": 1000 * (n - i),
+                 "hook": "J'ai perdu 18 000 € sur un seul contrat"}
+            if formula:
+                r["formula"] = formula(i)
+            out.append(r)
+        return out
+
+    def test_formula_column_wins_and_is_counted_as_read(self):
+        f = SW.load_formulas(SW.HOOKS)
+        a = SW.analyse(self.rows(18, formula=lambda i: "#1" if i < 6 else "Time Collapse"), f)
+        self.assertEqual(a["reels"][0]["formula"], "Cost Confession")
+        self.assertEqual(a["read"], 18)
+        self.assertEqual(dict(a["top_formulas"])["Cost Confession"], 6)
+
+    def test_no_claim_under_fifteen(self):
+        import io
+        f = SW.load_formulas(SW.HOOKS)
+        buf = io.StringIO()
+        SW.render(SW.analyse(self.rows(12, formula=lambda i: "1"), f), out=buf)
+        self.assertIn("not said", buf.getvalue())
+
+    def test_one_account_dominating_is_flagged(self):
+        f = SW.load_formulas(SW.HOOKS)
+        a = SW.analyse(self.rows(18, account=lambda i: "@big" if i < 4 else f"@a{i}"), f)
+        self.assertEqual(a["dominant"], "@big")
+
+    def test_without_the_column_nothing_changes(self):
+        f = SW.load_formulas(SW.HOOKS)
+        a = SW.analyse(self.rows(3), f)
+        self.assertEqual(a["reels"][0]["formula"], "to classify by reading")
+        self.assertEqual(a["read"], 0)
+
+
+class BeatsCards(unittest.TestCase):
+    SCRIPT = "Proposals used to take me five hours.\nNow it takes twenty minutes.\nComment TEMPLATE."
+
+    def test_unmarked_script_is_unchanged(self):
+        a = B.analyse(self.SCRIPT)
+        self.assertNotIn("cards", a)
+        self.assertEqual(len(a["beats"]), 3)
+
+    def test_cards_are_not_speech(self):
+        marked = "[on-screen] 5 HOURS -> 20 MIN\n" + self.SCRIPT.replace(
+            "Comment", "[écran] THE TEMPLATE THAT DOES IT ALL FOR YOU\nComment")
+        a = B.analyse(marked)
+        b = B.analyse(self.SCRIPT)
+        self.assertEqual(a["total_words"], b["total_words"])
+        self.assertEqual([c["beat"] for c in a["cards"]], [1, 3])
+        self.assertEqual(a["cards"][0]["end"], a["beats"][2]["start"])
+        self.assertTrue(a["cards"][1]["flags"])
+
+    def test_no_card_at_frame_one(self):
+        a = B.analyse("First line here.\n[on-screen] LATE CARD\nSecond line here.")
+        self.assertTrue(any("frame 1" in n for n in a["notes"]))
+
+
+class Voice(unittest.TestCase):
+    def setUp(self):
+        self.path = voice('- **Words I would never say out loud:** game changer, "incroyable", خويا\n'
+                          "  - booster\n- **Do I swear:** no\n"
+                          "- **Clients, numbers or names I cannot say publicly:** Acme, 18 400\n"
+                          "- **Words I actually use:** (list them)\n")
+
+    def test_reads_both_fields(self):
+        lists = V.read_voice(self.path)
+        self.assertEqual(lists["never"], ["game changer", "incroyable", "خويا", "booster"])
+        self.assertEqual(lists["private"], ["Acme", "18 400"])
+
+    def test_matches_whole_words_any_case_accent_script(self):
+        lists = V.read_voice(self.path)
+        hits = V.check("Un vrai Game-changer, INCROYABLE.\nIncroyablement simple.\nوخويا قالي\n"
+                       "Acme m'a payé 18 400 €.", lists)
+        found = {(h["entry"], h["line"]) for h in hits}
+        self.assertIn(("game changer", 1), found)
+        self.assertIn(("incroyable", 1), found)
+        self.assertNotIn(("incroyable", 2), found)
+        self.assertIn(("خويا", 3), found)
+        self.assertIn(("18 400", 4), found)
+
+    def test_placeholder_is_not_a_word(self):
+        lists = V.read_voice(voice("- **Words I would never say out loud:** (fill this in)\n"))
+        self.assertEqual(lists["never"], [])
+
+
+class Carousel(unittest.TestCase):
+    DECK = ("handle: @me\n---\n# THE $18,000 CLAUSE\nOne line.\n---\n# What it says now\nPayment on delivery.\n"
+            "---\n# Why it works so well\nApproval is a feeling.\n---\n# The second clause here\nOne revision.\n"
+            "---\n# Recap\n- one\n- two\n---\n# Want it?\nComment CLAUSE and I will send it.\n")
+
+    def issues(self, text):
+        settings, slides = CA.parse(text)
+        return CA.lint(settings, slides), slides
+
+    def test_clean_deck(self):
+        issues, slides = self.issues(self.DECK)
+        self.assertEqual(len(slides), 6)
+        self.assertFalse([i for i in issues if i[0] in ("FAIL", "WARN")], issues)
+
+    def test_cover_and_body_limits_fail(self):
+        long_cover = self.DECK.replace("THE $18,000 CLAUSE", "THE ONE CLAUSE I PUT IN EVERY CONTRACT NOW")
+        issues, _ = self.issues(long_cover)
+        self.assertTrue(any(l == "FAIL" and s == 1 for l, s, _ in issues))
+        wordy = self.DECK.replace("One revision.", " ".join(["word"] * 30))
+        issues, _ = self.issues(wordy)
+        self.assertTrue(any(l == "FAIL" and s == 4 for l, s, _ in issues))
+
+    def test_ask_must_be_alone_on_the_last_slide(self):
+        issues, _ = self.issues(self.DECK.replace("Approval is a feeling.", "Save this post."))
+        self.assertTrue(any("an ask on slides" in m for _, _, m in issues))
+
+    def test_arabic_slide_is_rtl_and_ask_is_checked_by_reading(self):
+        deck = self.DECK.replace("# What it says now\nPayment on delivery.", "# البند اللي نحطّو\nالخلاص عند التسليم.")
+        issues, slides = self.issues(deck)
+        self.assertEqual(slides[1]["lang"], "ar")
+        self.assertIn('dir="rtl"', CA.slide_html(slides[1], 2, 6, {}))
+        self.assertTrue(any(l == "CHECK" for l, _, _ in issues))
+
+    def test_fail_blocks_rendering(self):
+        folder = tempfile.mkdtemp()
+        src = os.path.join(folder, "s.md")
+        with open(src, "w", encoding="utf-8") as fh:
+            fh.write(self.DECK.replace("THE $18,000 CLAUSE", "ONE TWO THREE FOUR FIVE SIX SEVEN"))
+        r = run_script(os.path.join(SKILLS, "ig-carousel", "carousel.py"),
+                       [src, "--render", "--out", os.path.join(folder, "out")])
+        self.assertEqual(r.returncode, 1)
+        self.assertFalse(os.path.exists(os.path.join(folder, "out")))
+
+    @unittest.skipUnless(CA.find_browser(), "no Chrome, Edge or Chromium on this machine")
+    def test_renders_png_at_1080x1350(self):
+        import struct
+        folder = tempfile.mkdtemp()
+        settings, slides = CA.parse(self.DECK)
+        CA.lint(settings, slides)
+        report = CA.render(settings, slides[:1], folder)
+        self.assertEqual(len(report["pngs"]), 1)
+        with open(report["pngs"][0], "rb") as fh:
+            self.assertEqual(struct.unpack(">II", fh.read(24)[16:24]), (1080, 1350))
+
+
+class NewScriptsOnCp1252(unittest.TestCase):
+    def test_new_scripts_survive_a_windows_console(self):
+        folder = tempfile.mkdtemp()
+        tsv = os.path.join(folder, "p.tsv")
+        with open(tsv, "w", encoding="utf-8") as fh:
+            fh.write("date\tformat\tvues\thook\n" + "\n".join(
+                f"2026-01-{i + 1:02d}\treel\t{1000 + i}\tخسرت {i} دينار" for i in range(14)))
+        v = voice("- **Words I would never say out loud:** خويا\n")
+        for script, args, stdin in (
+                (("ig-audit", "audit.py"), [tsv, "--no-journal", "--lang", "ar"], None),
+                (("ig-human", "voice.py"), ["-", "--voice", v], CommandLine.AR),
+                (("ig-carousel", "carousel.py"), ["-", "--lang", "ar"], "# عنوان\nنص\n".encode("utf-8")),
+                (("ig-reel", "journal.py"), ["--file", os.path.join(folder, "j.jsonl"), "add", "--format",
+                                             "reel", "--hook", "خسرت 18 ألف"], None)):
+            with self.subTest(script=script[1]):
+                r = run_script(os.path.join(SKILLS, *script), args, stdin=stdin)
+                self.assertNotIn(b"Traceback", r.stderr, r.stderr.decode("utf-8", "replace"))
+                self.assertIn(r.returncode, (0, 1))
 
 
 if __name__ == "__main__":

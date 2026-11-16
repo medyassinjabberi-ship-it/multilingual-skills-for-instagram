@@ -10,6 +10,7 @@ description: >-
 # ig-carousel
 
 > **Language:** answer in the page's language, pass `--lang` to every script, and never invent Darija: see the Language section at the end of this file.
+> **Windows:** if `python3` is not found, run the same commands with `py -3` (or `python`).
 
 Carousels are the highest-dwell format on the grid, because a swipe is an
 interaction and a scroll is not. They also get a second chance: Instagram can
@@ -64,18 +65,44 @@ LAST      CTA       one action. Save, comment a keyword, or follow. One.
 
 ## Building the files
 
-Instagram wants 1080x1350 (4:5), JPEG or PNG, up to 20 items. Build it as HTML
-and print each slide:
+Instagram wants 1080x1350 (4:5), JPEG or PNG, up to 20 items. One tool lives in
+this folder and it runs: it lints the copy against the rules above, then renders
+the PNG files with a browser already on the machine (Chrome, Edge or Chromium).
 
 ```bash
-# one <section> per slide, 1080x1350, page-break-after: always
-# then Chrome headless --print-to-pdf, or any HTML-to-image you already use
+python3 carousel.py slides.md                          # lint only
+python3 carousel.py slides.md --render --out ./carousel
 ```
 
-Write the HTML with `width:1080px; height:1350px`, a single accent colour, and
-type no smaller than 32px, because this is read on a phone at a third of its
-real size. If the project has a brand skill or a design system, use it and do
-not invent a palette.
+`slides.md` is plain text: an optional header (`handle:`, `accent:`,
+`theme: dark|light`, `lang:`), then one block per slide separated by a line
+that is exactly `---`, the headline on a line starting with `# `, the body
+under it (`- ` lines become a list):
+
+```
+handle: @yourhandle
+accent: #E4572E
+---
+# THE $18,000 CLAUSE
+One line I now put in every contract.
+---
+# What it says
+Payment on delivery, not on approval.
+```
+
+The linter FAILs a cover over 6 words, a body over 25 words (45 on the recap),
+and more than 20 slides; it WARNs on under 5 or over 10 slides, a missing
+handle, and an ask that is not alone on the last slide. Fix every FAIL before
+rendering; it refuses to render otherwise. Arabic-script slides are laid out
+right to left and shaped by the browser, numbered and signed on the mirrored
+side; text that does not fit is shrunk, never cut, and type never goes under
+28px. Without a browser it writes `carousel.html` and says so. It also writes
+`alt.txt`, a first draft of the alt text from each slide's own words: edit it
+with the user before posting.
+
+The template is deliberately plain: one accent colour, big type, the number
+and the handle in the corners. If the user has a brand or a design system, use
+its colour with `accent:` and say the template is the pack's, not theirs.
 
 ## Output
 
@@ -85,7 +112,13 @@ carousel is Job B in `/ig-caption`: the caption is doing work here, because the
 cover has already used its six words.
 
 Run both through `/ig-human`. Build the files only after the user approves the
-copy.
+copy. When they say yes, log it so `/ig-audit` can find it later:
+
+```bash
+python3 journal.py add --format carousel --hook "{cover headline}" --lang {lang} --theme "{theme}" --type teach
+```
+
+and run `journal.py posted {id} --date YYYY-MM-DD` when they say it is live.
 
 ```
 CAROUSEL  ·  8 slides
@@ -101,6 +134,13 @@ CAROUSEL  ·  8 slides
 
 Caption: Job B, hook in line 1, one ask, 3 tags.
 ```
+
+**For a Darija page** (Arabic script or arabizi), the list above is the
+structure, not the words: for each slide, what it must say, the number or name
+it must carry, and its word budget, with `____` where the user's words go. Write
+`slides.md` the same way, blanks included: `carousel.py` FAILs on `____` and
+`{{...}}`, so nothing renders until the user has written every line. Then lint
+and render exactly what they wrote.
 
 Nothing is uploaded. The user posts it.
 

@@ -124,7 +124,15 @@ prints what separates the top third from the bottom third.
 
 The formula patterns are English phrasings. A French or Darija hook comes out as
 "to classify by reading": name its formula yourself from `ig-reel/hooks.json`,
-by what it does, and say it was read, not matched. Its hook score shows "n/c"
+by what it does, put its id in an optional `formula` column, and run the script
+again. The batch is then ranked by formula like an English one, and the report
+says how many formulas were read rather than matched. You can do the same for an
+English hook the patterns got wrong.
+
+The script refuses to say what over-indexes under 15 reels, only counts a
+formula that appears at least twice in the top third (with its count in the
+bottom third next to it), and warns when one account holds half the top third:
+then the finding may be that account, not the formula. Relay those warnings. Its hook score shows "n/c"
 (not calibrated) and the batch medians use English hooks only. Views can be
 pasted as Instagram shows them: `20k`, `1.2M`. For YouTube captions in another language, change
 `--sub-langs "en.*"` to `"fr.*"` or `"ar.*"`.

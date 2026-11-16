@@ -18,6 +18,9 @@ with a header line naming the columns:
 `median` is that account's typical recent views and is the better baseline.
 If you only have `followers`, leave median out and the script says so.
 `hook` is the first line of the reel, spoken or on screen, in their words.
+An optional `formula` column (an id from ig-reel/hooks.json, "#3", or a name)
+is the formula Claude named by reading the hook. It wins over the English
+patterns, which is what makes a French or Darija batch rankable by formula.
 
 Usage
   python3 swipe.py captured.tsv
@@ -54,6 +57,26 @@ def load_formulas(path):
     order = d.get("classify_order") or sorted(by_id)
     return [(by_id[i]["id"], by_id[i]["name"],
              re.compile(by_id[i]["match"], re.IGNORECASE)) for i in order if i in by_id]
+
+
+MIN_CLAIM = 15        # reels needed before saying what over-indexes
+DOMINANT = 0.5        # one account holding this share of the top third
+
+
+_ID = re.compile(r"^(?:#|formula\s*|formule\s*|n°\s*)?0*(\d{1,3})\.?$", re.IGNORECASE)
+
+
+def named(given, formulas):
+    """A formula the user or Claude wrote in the `formula` column -> (id, name).
+    '#03', '3.', 'formula 3', 'nobody tells you' all work. Unknown -> None."""
+    g = (given or "").strip()
+    if not g or not formulas:
+        return None
+    m = _ID.match(g)
+    for fid, name, _ in formulas:
+        if (m and m.group(1) == str(fid)) or " ".join(g.lower().split()) == name.lower():
+            return fid, name
+    return None
 
 
 def classify(hook, formulas, lang="en"):
@@ -134,7 +157,15 @@ def analyse(rows, formulas, declared=None):
         base = r.get("median") or r.get("followers") or 0
         r["baseline"] = base
         r["outlier"] = round(r["views"] / base, 2) if base else None
-        r["formula_id"], r["formula"] = classify(r["hook"], formulas, r["lang"])
+        given = named(r.get("formula"), formulas)
+        if r.get("formula") and not given:
+            print(f"note: formula {r['formula']!r} is not in hooks.json, ignored for "
+                  f"{r.get('account', '')} \"{r['hook'][:40]}\"", file=sys.stderr)
+        if given:
+            (r["formula_id"], r["formula"]), r["formula_source"] = given, "read"
+        else:
+            r["formula_id"], r["formula"] = classify(r["hook"], formulas, r["lang"])
+            r["formula_source"] = "matched" if r["formula_id"] else None
         r["words"] = (len(re.findall(r"[A-Za-z0-9$%'’-]+", r["hook"])) if r["lang"] == "en"
                       else len(L.words(r["hook"])))
         if score_hook and r["lang"] == "en":
@@ -153,9 +184,15 @@ def analyse(rows, formulas, declared=None):
         vals = [i[key] for i in items if i.get(key) is not None]
         return round(statistics.median(vals), 1) if vals else None
 
-    counts = {}
+    counts, bottom_counts = {}, {}
     for r in top:
         counts[r["formula"]] = counts.get(r["formula"], 0) + 1
+    for r in bottom:
+        bottom_counts[r["formula"]] = bottom_counts.get(r["formula"], 0) + 1
+    by_account = {}
+    for r in top:
+        by_account[r.get("account", "")] = by_account.get(r.get("account", ""), 0) + 1
+    lead = max(by_account.items(), key=lambda kv: kv[1]) if by_account else ("", 0)
     return {
         "baseline": "account median" if used_median else "follower count",
         "n": len(ranked),
@@ -169,6 +206,10 @@ def analyse(rows, formulas, declared=None):
         "unclassified": sum(1 for r in ranked if r["formula"] == "unclassified"),
         "to_read": sum(1 for r in ranked if r["formula"] == "to classify by reading"),
         "langs": sorted({r["lang"] for r in ranked}),
+        "bottom_formulas": bottom_counts,
+        "read": sum(1 for r in ranked if r.get("formula_source") == "read"),
+        "dominant": (lead[0] if len(top) >= 3 and lead[1] / len(top) >= DOMINANT else None),
+        "dominant_share": (lead[1], len(top)),
     }
 
 
@@ -187,9 +228,24 @@ def render(a, out=sys.stdout):
         print(f"           \"{r['hook'][:96]}\"", file=out)
     print("-" * max(len(head), 78), file=out)
     print("WHAT IS WORKING IN THIS BATCH", file=out)
-    if a["top_formulas"]:
+    claims = [(n, c) for n, c in a["top_formulas"]
+              if c >= 2 and n not in ("unclassified", "to classify by reading")]
+    if a["n"] < MIN_CLAIM:
+        print(f"  over-indexing:         not said. {a['n']} reels; below {MIN_CLAIM} a count in the top "
+              "third is chance.", file=out)
+    elif claims:
         print("  top third by outlier:  "
-              + ", ".join(f"{n} x{c}" for n, c in a["top_formulas"][:4]), file=out)
+              + ", ".join(f"{n} x{c} (bottom x{a['bottom_formulas'].get(n, 0)})" for n, c in claims[:4]),
+              file=out)
+    else:
+        print("  top third by outlier:  no formula appears twice. Nothing over-indexes yet.", file=out)
+    if a["dominant"]:
+        k, t = a["dominant_share"]
+        print(f"  one account dominates: {a['dominant']} holds {k} of the top {t}. That may be the "
+              "account, not the formula.", file=out)
+    if a["read"]:
+        print(f"  formulas read:         {a['read']} named by reading (formula column), "
+              "not matched by pattern.", file=out)
     if a["top_hook_score"] is not None and a["bottom_hook_score"] is not None:
         print(f"  median hook score:     top {a['top_hook_score']:.0f}  "
               f"vs bottom {a['bottom_hook_score']:.0f}  (English hooks only)", file=out)

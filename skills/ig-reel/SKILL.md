@@ -16,14 +16,16 @@ description: >-
 
 Turns one raw idea into a Reel that somebody finishes.
 
-Two tools live in this folder and they both actually run. Use them. Do not
+Three tools live in this folder and they all actually run. Use them. Do not
 eyeball the hook and do not guess at the length.
 
 ```bash
-python3 hookscore.py hooks.txt              # rank your hook options
-python3 hookscore.py --hook "one line"      # score a single one
-python3 beats.py script.txt --target 30     # timed beat sheet before you shoot
+python3 hookscore.py hooks.txt              # catch broken hooks (a gate, not a ranking)
+python3 hookscore.py --hook "one line"      # check a single one
+python3 beats.py script.txt --target 30     # timed beat sheet + on-screen cards, before you shoot
 python3 hookscore.py hooks.txt --lang fr    # French, Arabic script (ar) or arabizi (aeb-latn)
+python3 journal.py add --format reel --hook "..." --formula 5 --lang en   # on "yes"
+python3 journal.py recent                   # what was made lately, what repeats
 ```
 
 ## Outside English: what the script measures and what you judge
@@ -66,6 +68,10 @@ number in `voice.md` under Pace.
 4. If `~/.claude/instagram/swipe.md` exists, read it. `/ig-viral` writes that
    file, and it is the user's own evidence about which formulas are working in
    their niche right now. It beats the defaults in this file.
+5. If `~/.claude/instagram/insights.md` exists, read it. `/ig-audit` writes it
+   from the user's own posts, and it outranks the swipe file: it is what worked
+   on this account. Run `python3 journal.py recent` too, so the new reel does
+   not reuse a formula or a theme from the last two weeks without saying so.
 
 ## The shape
 
@@ -90,23 +96,40 @@ nothing else does.
 three formulas that genuinely fit it, and write the spoken line plus the
 on-screen line for each. Different formulas, not three rewrites of one.
 
-**2. Score them.** Put the three spoken lines in a file, one per line, and run
-`hookscore.py`. Show the user the ranking. If the top one is under 50, you do
-not have the hook yet and no amount of editing fixes that.
+**2. Gate them, then choose.** Put the three spoken lines in a file, one per
+line, and run `hookscore.py`. It is a **gate, not a ranking**. It reliably
+catches broken hooks: a greeting, a preamble, nothing concrete, too long to say
+in three seconds. In English a hook under 50 is out; in other languages, a hook
+that breaks a rule is out. Rewrite or replace it.
+
+Among the hooks that pass, the score does not tell you which one will travel:
+tested on real hooks, it separated a creator's own hits from their misses at
+AUC 0.56, barely better than a coin (see the top of `hookscore.py`). So do not
+pick the highest number. Choose with the grid above (stakes, address, formula,
+said aloud), with the user's own evidence (`insights.md`, then `swipe.md`), and
+with which hook carries the user's real proof. Say why you chose it in one line.
 
 **3. Write the script** on the winning hook. Plain spoken language, the way the
 user actually talks. Contractions. Short lines. No sentence they would have to
 rehearse.
 
-**4. Time it.** Run `beats.py script.txt --target {length}`. Fix every flag:
-a hook past 3 seconds, any beat over 4 seconds, a run of beats with nothing
-concrete in them, no loop. Re-run until it is clean.
+**4. Time it.** Write the on-screen text into the same file, each card on its
+own line starting with `[on-screen]`, just above the spoken line it goes up
+with. Run `beats.py script.txt --target {length}`. Fix every flag: a hook past
+3 seconds, any beat over 4 seconds, a run of beats with nothing concrete in
+them, no loop, no card at frame 1, a card over six words. Re-run until it is
+clean. The ON-SCREEN CARDS block is the editor's cue sheet: hand it over as is,
+and say the timecodes are estimates to retime after recording.
 
-**5. Humanize it.** Run the script through `/ig-human` before showing it. A
+**5. Humanize it.** Run the script through `/ig-human` before showing it,
+including its `voice.py` check against the words the user never says. A
 written-sounding line is obvious the moment someone says it out loud.
 
-**6. Print the block.** The script in a fenced block, the on-screen text as a
-separate list with timings, and then:
+**6. Print the block.** Not while anything is still a placeholder: if the
+script or a card still has a `{{...}}` (`hookscore.py` and `beats.py` print
+"pending"), ask the user for the real value and stop there. A reel with a
+placeholder is not READY and is not logged. Otherwise: the script in a fenced
+block, the on-screen text as a separate list with timings, and then:
 
 ```
 REEL READY
@@ -114,14 +137,32 @@ hook:       #1 Cost Confession, scored 54.8 OK
 length:     28.4s across 9 beats at 165 wpm
 on-screen:  6 cards
 humanizer:  4 artefacts stripped, human score 81 PASS
+voice:      clean (0 words the user never says)
 caption:    run /ig-caption next
 
 Reply "yes" to log it, or tell me what to change.
 ```
 
 **7. Never publish.** This skill produces a script. The user shoots it and
-posts it. On "yes", append to `~/.claude/instagram/log.md` with the date, the
-hook formula used and the first line, so `/ig-audit` has a history later.
+posts it. On "yes", log it:
+
+```bash
+python3 journal.py add --format reel --hook "{first spoken line}" --formula {id}         --lang {lang} --theme "{theme}" --type {proof|teach|opinion|story|offer}         --hookscore {English overall, or leave out} --length {seconds}
+```
+
+Tell the user the id it prints, and that when the reel is live they can say
+"posted" (with the link if they have it). Then:
+
+- If more than one entry is `ready` (`python3 journal.py list --status ready`),
+  ask which one went out. Never pick one by guessing.
+- Ask the date if they did not say it ("today?"), and the link: the link is
+  what lets the audit match the post for sure.
+- Run `python3 journal.py posted {id} --date YYYY-MM-DD --permalink {link}`.
+
+Never mark a post as posted on a guess. This is what lets `/ig-audit` trace a result
+back to the hook and the formula that produced it. An older
+`~/.claude/instagram/log.md` is still read by the other skills; new entries go
+to the journal.
 
 ## On-screen text is a separate script
 
@@ -161,18 +202,21 @@ Write it separately, every time. It is read before it is heard.
 ```
 
 ```
-HOOKS  (scored)
-  54.8  OK    #1  Cost Confession "I billed four hours a week for formatting. For two years."
-                                  on screen: 2 YEARS WASTED
-  51.2  OK    #5  Time Collapse   "Proposals used to take me five hours. Twenty minutes now."
-                                  on screen: 5 HOURS -> 20 MIN
-  36.6  WEAK  #9  The Steal       "Steal the proposal template that did it."
-                                  on screen: STEAL THIS
+HOOK GATE
+  ok   77.8  #1  Cost Confession "I was losing {{hours per week}} hours a week to proposals."
+                                 on screen: {{N}} HOURS A WEEK, GONE
+                                 pending: the user has not said how many hours
+  ok   51.2  #5  Time Collapse   "Proposals used to take me five hours. Twenty minutes now."
+                                 on screen: 5 HOURS -> 20 MIN
+  out  36.6  #9  The Steal       "Steal the proposal template that did it."
+                                 on screen: STEAL THIS
 
-Both top hooks clear 50 but neither is STRONG: the weakest check on each is
-STAKES (nothing in the line is at risk). Shooting #1: it scores highest and the
-cost is the user's own. If they prefer #5 because it reads in one glance on
-screen, add what the five hours cost them and re-run before writing.
+#9 is out. #1 and #5 pass the gate. #1 scores higher only because the
+placeholder counts as a number: the score does not choose between them. #5 uses
+nothing but what the user said and reads in one glance on screen, so it is the
+one to shoot today. #1 is better on stakes, and it becomes the pick the moment
+the user answers: "How many hours a week did proposals cost you before?"
+Never fill that number in yourself.
 ```
 
 ## Language (applies to every skill in this pack)

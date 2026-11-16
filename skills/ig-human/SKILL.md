@@ -22,7 +22,16 @@ python3 humanize.py draft.txt --report        # clean it, show what changed
 python3 detect.py draft.txt                    # score it, five checks
 python3 detect.py before.txt after.txt         # prove the delta
 python3 humanize.py draft.txt --lang fr --report   # say the language when you know it
+python3 voice.py draft.txt                     # the user's own "never say" words, any language
 ```
+
+`voice.py` reads two fields the user filled in `~/.claude/instagram/voice.md`:
+**Words I would never say out loud** and **Clients, numbers or names I cannot
+say publicly**. It finds them in the draft as whole words or phrases, case and
+accents ignored, Arabic diacritics ignored and attached prefixes (و ف ب ل ك ال)
+allowed. Because the words come from the user, it works in Darija and arabizi
+too. A CANNOT SAY hit comes out before anything is shown as ready; a NEVER SAYS
+hit gets rewritten in the user's own words.
 
 `slop.json` holds what does not depend on a language: 18 invisible character
 classes, 11 typographic substitutions and 4 structural tells (emoji, hashtag
@@ -140,7 +149,8 @@ do not tell a user their text is undetectable.
 4. If the verdict is not PASS (or, outside English, a signal is low), fix the
    weakest check named in the output and go again. Two rounds is normal. Five means the draft was written by formula,
    and the fix is a different draft, not more passes.
-5. Show the user the cleaned text and the score. Never the score alone.
+5. Run `voice.py` on the final text. Fix every hit.
+6. Show the user the cleaned text and the score. Never the score alone.
 
 ## Language (applies to every skill in this pack)
 

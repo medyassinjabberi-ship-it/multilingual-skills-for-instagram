@@ -19,6 +19,15 @@ word ("وبالفلوس" is one word, four in English), so the same script reads
 fewer, longer words: time yourself once and pass --wpm. Until then the report
 says the timing is an English-rate estimate.
 
+On-screen text: a line starting with [on-screen] (or [screen], [écran]) is a
+text card, not speech. It is not timed as words; it goes up with the next
+spoken line and stays until the next card. The report lists the cards with
+their estimated timecodes, ready for the edit. A script with no such line
+gives exactly the same report as before.
+
+    [on-screen] 5 HOURS -> 20 MIN
+    Proposals used to take me five hours.
+
 Usage
   python3 beats.py script.txt
   python3 beats.py script.txt --target 30
@@ -54,6 +63,8 @@ STOPWORDS = {
     "will", "can", "at", "as", "by", "from", "out", "up", "off", "one", "all",
 }
 
+CARD_RE = re.compile(r"^\[(?:on[\s-]?screen|screen|écran|ecran)\]\s*:?\s*(.*)$", re.IGNORECASE)
+CARD_WORDS = 6           # words a card can hold and still be read at arm's length
 HOOK_WINDOW = 3.0        # seconds. Past this, the thumb has already decided.
 MAX_BEAT = 4.0           # seconds on one idea with no change on screen.
 ABSTRACT_RUN = 3         # beats in a row with nothing checkable in them.
@@ -71,7 +82,11 @@ def words(text, lang="en"):
     return L.words(text)
 
 
+PENDING = re.compile(r"\{\{[^{}]*\}\}")
+
+
 def concrete(text, lang="en"):
+    text = PENDING.sub("100", text)       # {{your number}} will be a number when it is said
     if lang == "en":
         return len(CONCRETE_RE_EN.findall(text))
     return len(CONCRETE_RE.findall(L.merge_thousands(text)))
@@ -112,9 +127,28 @@ def split_beats(raw, wps, lang="en"):
     return beats
 
 
+def split_cards(raw, wps, lang="en"):
+    """Separate [on-screen] lines from speech. Returns the spoken beats and, for
+    each card, the index of the beat it goes up with."""
+    beats, cards, pending = [], [], []
+    for line in raw.splitlines():
+        m = CARD_RE.match(line.strip())
+        if m:
+            if m.group(1).strip():
+                pending.append(m.group(1).strip())
+            continue
+        part = split_beats(line, wps, lang)
+        if part:
+            cards += [(text, len(beats)) for text in pending]
+            pending = []
+            beats += part
+    cards += [(text, max(len(beats) - 1, 0)) for text in pending]
+    return beats, cards
+
+
 def analyse(raw, wpm=165, target=None, lang="en", wpm_given=True):
     wps = wpm / 60.0
-    beats = split_beats(raw, wps, lang)
+    beats, cards = split_cards(raw, wps, lang)
     if not beats:
         return None
 
@@ -197,12 +231,16 @@ def analyse(raw, wpm=165, target=None, lang="en", wpm_given=True):
             notes.append(f"{-delta:.1f}s under target. Either add {int(-delta * wps)} words "
                          "or shoot it short. Short is usually right.")
 
+    pending = sorted({m.group(0) for r in rows for m in PENDING.finditer(r["text"])})
+    if pending:
+        notes.append(f"Pending: {', '.join(pending)} still to fill. Not ready to shoot until it is a real number.")
+
     if lang != "en" and not wpm_given:
         notes.append(f"Timing uses the English rate ({wpm:.0f} wpm). In "
                      f"{L.LANG_NAMES.get(lang, lang)} words are not the same length: "
                      "read one script out loud with a timer and pass --wpm.")
 
-    return {
+    result = {
         "lang": lang,
         "wpm": wpm, "target": target,
         "total_seconds": round(total, 2),
@@ -210,6 +248,21 @@ def analyse(raw, wpm=165, target=None, lang="en", wpm_given=True):
         "beats": rows,
         "notes": notes,
     }
+    if cards:
+        result["cards"] = []
+        for i, (text, beat) in enumerate(cards):
+            start = rows[beat]["start"]
+            end = rows[cards[i + 1][1]]["start"] if i + 1 < len(cards) else total
+            n = len(words(text, lang))
+            flags = [f"{n} words: {CARD_WORDS} or fewer reads at arm's length"] if n > CARD_WORDS else []
+            result["cards"].append({"text": text, "beat": beat + 1, "start": round(start, 2),
+                                    "end": round(max(end, start), 2), "words": n, "flags": flags})
+        if cards[0][1] != 0:
+            notes.append("No card goes up with the hook. The hook card belongs at frame 1: "
+                         "people read before they listen.")
+        if any(c["end"] - c["start"] < 1.0 for c in result["cards"]):
+            notes.append("A card is up for under a second: nobody reads it. Merge it with the next one.")
+    return result
 
 
 def render(a, out=sys.stdout):
@@ -222,6 +275,13 @@ def render(a, out=sys.stdout):
         print(f"  {tc(r['start'])}  {r['dur']:4.1f}s  {label}{r['text']}", file=out)
         for f in r["flags"]:
             print(f"  {'':>6}  {'':>5}  {'':<8}^ {f}", file=out)
+    if a.get("cards"):
+        print("-" * max(len(head), 72), file=out)
+        print("  ON-SCREEN CARDS  (estimated from the word count: retime them in the edit)", file=out)
+        for c in a["cards"]:
+            print(f"  {tc(c['start'])} - {tc(c['end'])}  beat {c['beat']:<2}  {c['text']}", file=out)
+            for f in c["flags"]:
+                print(f"  {'':>15}  {'':<7}  ^ {f}", file=out)
     print("-" * max(len(head), 72), file=out)
     for n in a["notes"]:
         print(f"  - {n}", file=out)
@@ -243,7 +303,8 @@ def main():
     a = analyse(raw, wpm=args.wpm or 165, target=args.target, lang=lang,
                 wpm_given=args.wpm is not None)
     if not a:
-        print("empty script", file=sys.stderr)
+        only_cards = any(CARD_RE.match(line.strip()) for line in raw.splitlines())
+        print("only [on-screen] cards, no spoken line" if only_cards else "empty script", file=sys.stderr)
         sys.exit(2)
     if args.json:
         print(json.dumps(a, indent=2, ensure_ascii=False))
